@@ -1,4 +1,4 @@
-import io.qameta.allure.Step;
+
 import io.restassured.response.Response;
 import objects.BookingDetails;
 import objects.CreditCard;
@@ -13,20 +13,20 @@ import static io.restassured.RestAssured.given;
 
 public class Steps {
 
+    static User user = new User("rus", "screen");
 
-@Test
-
-    public void goWebTours() {
-    User user = new User("rus", "screen");
-    user.setFirstName("Ruslan");
-    user.setLastName("Borodin");
-    user.setAddress1("Begovaya");
-    user.setAddress2("Moscow");
     Passenger pass1 = new Passenger(user.getFirstName() + " " + user.getLastName());
     Passenger pass2 = new Passenger("Jane Hannah");
     Passenger pass3 = new Passenger("Will Carter");
     CreditCard creditCard = new CreditCard("123456789012", "12/20");
 
+
+    public  void goWebTours() {
+
+    user.setFirstName("Ruslan");
+    user.setLastName("Borodin");
+    user.setAddress1("Begovaya");
+    user.setAddress2("Moscow");
 
 
 
@@ -78,6 +78,10 @@ public class Steps {
             .get(EndPoints.afterLogin)
             .then()
             .spec(Specifications.responseSpec());
+
+}
+
+        public void booking() {
 
 
     BookingDetails bookingDetails = new BookingDetails(
@@ -175,5 +179,6 @@ public class Steps {
     Document thirdResPage = Jsoup.parse(thirdRes.asString());
     System.out.println(thirdResPage);
 }
-    }
+}
+
 
