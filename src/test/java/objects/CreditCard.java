@@ -24,4 +24,16 @@ public class CreditCard {
         this.creditCard = creditCard;
         this.expDate = expDate;
     }
+
+    public CreditCard() {
+
+    }
+
+    @Override
+    public String toString() {
+        return "CreditCard{" +
+                "creditCard='" + creditCard + '\'' +
+                ", expDate='" + expDate + '\'' +
+                '}';
+    }
 }

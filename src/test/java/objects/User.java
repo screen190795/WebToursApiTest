@@ -49,24 +49,47 @@ public class User {
         this.address2 = address2;
     }
 
-    public String getUserSession() {
-        return userSession;
+    public CreditCard getCreditCard() {
+        return creditCard;
     }
 
-    public void setUserSession(String userSession) {
-        this.userSession = userSession;
+    public void setCreditCard(CreditCard creditCard) {
+        this.creditCard = creditCard;
     }
 
-    private String username;
-private String password;
-private String firstName;
-private String lastName;
-private String address1;
-private String address2;
-public String userSession;
+    public  CreditCard creditCard;
+
+
+    public String username;
+public String password;
+public String firstName;
+public String lastName;
+public String address1;
+public String address2;
+
+
+    public User(String username, String password,String firstName, String lastName, String address1, String address2) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.address1 = address1;
+        this.address2 = address2;
+    }
 
     public User(String username, String password) {
         this.username = username;
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "creditCard=" + creditCard +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", address1='" + address1 + '\'' +
+                ", address2='" + address2 + '\'' +
+                '}';
     }
 }

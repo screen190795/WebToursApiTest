@@ -1,34 +1,36 @@
 
+import io.qameta.allure.Step;
+import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import objects.BookingDetails;
 import objects.CreditCard;
-import objects.Passenger;
 import objects.User;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.testng.Assert;
-import org.testng.annotations.Test;
+
+import javax.net.ssl.StandardConstants;
+import java.net.HttpCookie;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
-
 public class Steps {
-
-    static User user = new User("rus", "screen");
-
-    Passenger pass1 = new Passenger(user.getFirstName() + " " + user.getLastName());
-    Passenger pass2 = new Passenger("Jane Hannah");
-    Passenger pass3 = new Passenger("Will Carter");
-    CreditCard creditCard = new CreditCard("123456789012", "12/20");
+    static Map <String,String>cookies;
+    static  CreditCard creditCard = new CreditCard();
 
 
-    public  void goWebTours() {
-
-    user.setFirstName("Ruslan");
-    user.setLastName("Borodin");
-    user.setAddress1("Begovaya");
-    user.setAddress2("Moscow");
 
 
+    @Step("Переход на сайт, авторизация")
+    public  Map<String,String> goWebTours(BookingDetails bookingDetails) {
 
     given()
             .spec(Specifications.URLEncodedRequestSpec())
@@ -56,48 +58,100 @@ public class Steps {
 
     Document resultPage = Jsoup.parse(response.asString());
     String sessionID = resultPage.body().getElementsByAttributeValue("name", "userSession").attr("value");
-    user.setUserSession(sessionID);
+        Assert.assertFalse(sessionID.isEmpty());
 
     Response loginPage = given()
             .spec(Specifications.URLEncodedRequestSpec())
             .param("userSession", sessionID)
-            .param("username", user.getUsername())
-            .param("password", user.getPassword())
+            .param("username",bookingDetails.user.username)
+            .param("password", bookingDetails.user.password)
             .when()
             .post(EndPoints.submitLogin)
             .then()
             .spec(Specifications.responseSpec())
             .extract().response();
     Document loginResponse = Jsoup.parse(loginPage.asString());
-    //System.out.println(loginResponse);
-    //String cookies = loginPage.getCookies().toString();
+    cookies = loginPage.getCookies();
+        Assert.assertFalse(cookies.isEmpty());
+
 
     given()
+            .cookies(cookies)
             .when()
             .spec(Specifications.requestSpec())
             .get(EndPoints.afterLogin)
             .then()
             .spec(Specifications.responseSpec());
 
+    return cookies;
+
 }
 
-        public void booking() {
 
+@Step("Получение данных о пользователе")
+        public User getUserData(BookingDetails bookingDetails,Map<String,String> cookies) {
+    List<String> cookieList = cookies.entrySet().stream()
+            .map(Map.Entry::getValue)
+            .collect(Collectors.toList());
+    StringBuilder builder = new StringBuilder();
+    for(String cookie: cookieList){
+        builder.append(cookie);
+    }
+    cookieList= Arrays.asList(builder.toString().split("&"));
+   cookieList = cookieList.stream()
+          .map(x->x.replaceAll("(%0A)",""))
+           .collect(Collectors.toList());
+    Map<String,String> userData = new HashMap<>();
+    for (int i = 0; i < cookieList.size(); i+=2) {
+        userData.put(cookieList.get(i), cookieList.get(i + 1));
+    }
+    userData.entrySet().forEach(entry->{
+        System.out.println(entry.getKey() + " = " + entry.getValue());
+    });
+    for(Map.Entry<String, String> map : userData.entrySet()){
 
-    BookingDetails bookingDetails = new BookingDetails(
-            "0",
-            "London",
-            "10/20/2020",
-            "San Francisco",
-            "10/21/2020",
-            "3",
-            "on",
-            "Window",
-            "First",
-            "262;1039;10/20/2020",
-            "622;1039;10/21/2020"
-    );
+        switch(map.getKey()) {
+            case "firstName":
+                bookingDetails.user.setFirstName(map.getValue());
+                break;
+            case "lastName":
+                bookingDetails.user.setLastName(map.getValue());
+                break;
+            case "address1":
+                bookingDetails.user.setAddress1(map.getValue());
+                break;
+            case "address2":
+                bookingDetails.user.setAddress2(map.getValue());
+                break;
+            case "expDate":
+                creditCard.setExpDate(map.getValue());
+                break;
+            case "creditCard":
+                creditCard.setCreditCard(map.getValue());
+                break;
+            case "username":
+                bookingDetails.user.setUsername(map.getValue());
+                break;
+            default:
+                break;
+        }
+    }
+    creditCard.setExpDate(URLDecoder.decode(creditCard.getExpDate(), StandardCharsets.UTF_8));
+    bookingDetails.user.setCreditCard(creditCard);
+    Assert.assertFalse(bookingDetails.user.address1.isEmpty()|
+            bookingDetails.user.address2.isEmpty()
+            |bookingDetails.user.address1.isEmpty()
+            |bookingDetails.user.firstName.isEmpty()
+            |bookingDetails.user.lastName.isEmpty());
+return bookingDetails.user;
+
+}
+
+    @Step("Оформление заказа")
+        public void booking(BookingDetails bookingDetails) {
+
     given()
+            .cookies(cookies)
             .spec(Specifications.requestSpec())
             .when()
             .get(EndPoints.bookingStep1)
@@ -106,6 +160,7 @@ public class Steps {
 
 
     Response findResponse = given()
+            .cookies(cookies)
             .spec(Specifications.URLEncodedRequestSpec())
             .param("advanceDiscount", bookingDetails.getAdvanceDiscount())
             .param("depart", bookingDetails.getDepart())
@@ -131,6 +186,7 @@ public class Steps {
 
     Response secondRes =
             given()
+                    .cookies(cookies)
                     .spec(Specifications.URLEncodedRequestSpec())
                     .param("outboundFlight", bookingDetails.getOutboundFlight())
                     .param("returnFlight", bookingDetails.getReturnFlight())
@@ -150,16 +206,17 @@ public class Steps {
 
     Response thirdRes =
             given()
+                    .cookies(cookies)
                     .spec(Specifications.URLEncodedRequestSpec())
-                    .param("firstName", user.getFirstName())
-                    .param("lastName", user.getLastName())
-                    .param("address1", user.getAddress1())
-                    .param("address2", user.getAddress2())
-                    .param("pass1", pass1.getFullName())
-                    .param("pass2", pass2.getFullName())
-                    .param("pass3", pass3.getFullName())
-                    .param("creditCard", creditCard.getCreditCard())
-                    .param("expDate", creditCard.getExpDate())
+                    .param("firstName",bookingDetails.user.getFirstName())
+                    .param("lastName",bookingDetails.user.getLastName())
+                    .param("address1", bookingDetails.user.getAddress1())
+                    .param("address2", bookingDetails.user.getAddress2())
+                    .param("pass1", bookingDetails.user.getFirstName() + " " + bookingDetails.user.getLastName())
+                    .param("pass2", "Helena Smith")
+                    .param("pass3", "John Carter")
+                    .param("creditCard", bookingDetails.user.getCreditCard().getCreditCard())
+                    .param("expDate", bookingDetails.user.getCreditCard().getExpDate())
                     .param("saveCC", "on")
                     .param("numPassengers", bookingDetails.getNumPassengers())
                     .param("seatType", bookingDetails.getSeatType())
@@ -177,8 +234,18 @@ public class Steps {
                     .spec(Specifications.responseSpec())
                     .extract().response();
     Document thirdResPage = Jsoup.parse(thirdRes.asString());
-    System.out.println(thirdResPage);
+    //System.out.println(thirdResPage);
+
+        Response itinerary=
+                given()
+                .spec(Specifications.requestSpec())
+                .cookies(cookies)
+                .when()
+                .get("http://localhost:1080/cgi-bin/itinerary.pl")
+                .then()
+                .log().body().extract().response();
 }
+
 }
 
 

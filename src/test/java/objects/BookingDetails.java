@@ -1,5 +1,8 @@
 package objects;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BookingDetails {
     public String getAdvanceDiscount() {
         return advanceDiscount;
@@ -84,6 +87,8 @@ public class BookingDetails {
     private String seatType;
     private String outboundFlight;
     private String returnFlight;
+    public List<Passenger> passengerList;
+    public CreditCard creditCard;
 
     public String getOutboundFlight() {
         return outboundFlight;
@@ -104,8 +109,11 @@ public class BookingDetails {
     public BookingDetails() {
     }
 
-
-    public BookingDetails(String advanceDiscount, String depart, String departDate, String arrive, String returnDate, String numPassengers, String roundtrip, String seatPref, String seatType, String outboundFlight, String returnFlight) {
+public User user;
+    public BookingDetails(User user,String advanceDiscount, String depart, String departDate, String arrive, String returnDate, String numPassengers, String roundtrip, String seatPref, String seatType, String outboundFlight, String returnFlight) {
+        this.user = user;
+        passengerList = new ArrayList<>();
+        this.creditCard = creditCard;
         this.advanceDiscount = advanceDiscount;
         this.depart = depart;
         this.departDate = departDate;

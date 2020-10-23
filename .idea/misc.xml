@@ -4,7 +4,7 @@
   <component name="MavenBuildProjectComponent">
     <option name="mavenExecutable" value="" />
     <option name="Settings File" value="" />
-    <option name="mavenCommandLineParams" value="" />
+    <option name="mavenCommandLineParams" value="mvn clean test" />
     <option name="vmOptions" value="" />
     <option name="useMavenEmbedder" value="false" />
     <option name="useFilter" value="false" />
