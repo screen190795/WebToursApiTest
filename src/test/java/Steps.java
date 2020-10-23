@@ -15,10 +15,7 @@ import java.net.HttpCookie;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
@@ -90,13 +87,9 @@ public class Steps {
 
 @Step("Получение данных о пользователе")
         public User getUserData(BookingDetails bookingDetails,Map<String,String> cookies) {
-    List<String> cookieList = cookies.entrySet().stream()
-            .map(Map.Entry::getValue)
-            .collect(Collectors.toList());
+    List<String> cookieList = new ArrayList<>(cookies.values());
     StringBuilder builder = new StringBuilder();
-    for(String cookie: cookieList){
-        builder.append(cookie);
-    }
+    for(String cookie: cookieList) builder.append(cookie);
     cookieList= Arrays.asList(builder.toString().split("&"));
    cookieList = cookieList.stream()
           .map(x->x.replaceAll("(%0A)",""))
@@ -105,9 +98,7 @@ public class Steps {
     for (int i = 0; i < cookieList.size(); i+=2) {
         userData.put(cookieList.get(i), cookieList.get(i + 1));
     }
-    userData.entrySet().forEach(entry->{
-        System.out.println(entry.getKey() + " = " + entry.getValue());
-    });
+    userData.forEach((key, value) -> System.out.println(key + " = " + value));
     for(Map.Entry<String, String> map : userData.entrySet()){
 
         switch(map.getKey()) {
