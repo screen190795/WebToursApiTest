@@ -1,30 +1,20 @@
 
-import io.restassured.filter.session.SessionFilter;
-import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
-import objects.BookingDetails;
-import objects.CreditCard;
-import objects.Passenger;
-import objects.User;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.testng.IDataProviderMethod;
+import objects.*;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.Map;
-
-import static io.restassured.RestAssured.*;
 
 public class ApiTests {
 
 
 
     @Test(dataProvider = "bookingData", dataProviderClass = DP.class)
-    public void mainTest1(BookingDetails bookingDetails){
+    public void LoginAndBooking( UserLogin userLogin,BookingDetails bookingDetails, Passenger[] passengers, HiddenDetails hiddenDetails){
         Steps steps = new Steps();
-        Map<String,String> cookies = steps.goWebTours(bookingDetails);
-        steps.getUserData(bookingDetails,cookies);
-        steps.booking(bookingDetails);
+        Map<String,String> cookies = steps.goWebTours(userLogin);
+        UserDetails userDetails = steps.getUserData(cookies);
+        steps.booking(bookingDetails, userDetails, passengers, hiddenDetails);
     }
 
 }
