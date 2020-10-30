@@ -3,6 +3,8 @@ package objects;
 public class Passenger {
     private String fullName;
 
+
+
     public String getFullName() {
         return fullName;
     }
@@ -13,5 +15,9 @@ public class Passenger {
 
     public Passenger(String fullName) {
         this.fullName = fullName;
+    }
+
+    public Passenger(){
+        super();
     }
 }

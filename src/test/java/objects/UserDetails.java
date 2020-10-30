@@ -9,8 +9,11 @@ public class UserDetails {
     private String creditCard;
     private String expDate;
 
+    public UserDetails() {
+        super();
+    }
 
-    public UserDetails( String firstName, String lastName, String address1, String address2, String creditCard, String expDate) {
+    public UserDetails(String firstName, String lastName, String address1, String address2, String creditCard, String expDate) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.address1 = address1;

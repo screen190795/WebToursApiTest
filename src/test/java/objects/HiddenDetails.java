@@ -14,6 +14,11 @@ public class HiddenDetails {
     private String buyFlightsY;
 
 
+    public HiddenDetails(){
+        super();
+    }
+
+
     public HiddenDetails(String findFlightsX, String findFlightsY, String[] cgifields,
                          String reserveFlightsX, String reserveFlightsY, String JSFormSubmit,
                          String buyFlightsX, String buyFlightsY) {

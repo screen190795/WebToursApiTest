@@ -21,6 +21,10 @@ public class BookingDetails {
     private String outboundFlight;
     private String returnFlight;
 
+    public BookingDetails(){
+        super();
+    }
+
 
     public BookingDetails(String advanceDiscount, String depart, String departDate, String arrive, String returnDate, String numPassengers, String roundtrip, String seatPref, String seatType, String outboundFlight, String returnFlight) {
 
