@@ -1,9 +1,12 @@
 
 import io.qameta.allure.Step;
+import io.restassured.http.Cookies;
+import io.restassured.internal.http.AuthConfig;
 import io.restassured.response.Response;
 import objects.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Collector;
 import org.testng.Assert;
 
@@ -13,8 +16,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
+import static org.testng.Assert.fail;
+
 public class Steps {
-    static Map <String,String> cookies;
+
 
 public String getCookie(Map<String,String>cookies, String key){
     List<String> cookie = cookies.entrySet()
@@ -69,7 +74,7 @@ public String getCookie(Map<String,String>cookies, String key){
             .then()
             .spec(Specifications.responseSpec())
             .extract().response();
-    cookies = loginPage.getCookies();
+  Map<String, String>  cookies = loginPage.getCookies();
         Assert.assertFalse(cookies.isEmpty());
 
     return cookies;
@@ -79,9 +84,12 @@ public String getCookie(Map<String,String>cookies, String key){
 
 @Step("Получение данных о пользователе")
         public UserDetails getUserData(Map<String,String> cookies) {
-        UserDetails userDetails=null;
-    List<String> cookieList = new ArrayList<>(cookies.values());
 
+    /**
+     *  Перевод необработанных данных куки в в список, чистка от лишних данных
+     */
+        UserDetails userDetails;
+    List<String> cookieList = new ArrayList<>(cookies.values());
     StringBuilder builder = new StringBuilder();
     for(String cookie: cookieList) builder.append(cookie);
 
@@ -90,23 +98,28 @@ public String getCookie(Map<String,String>cookies, String key){
             .map(x->x.replaceAll("(%0A)",""))
             .collect(Collectors.toList());
 
-    Map<String,String> userData = new HashMap<>();
+
+
+/**
+ *  Заполнение словаря данных о пользователе,проверка на наличие всех значений
+ */
+
+    Map<String,String> mtUserInfo = new HashMap<>();
+    try{
     for (int i = 0; i < cookieList.size(); i+=2) {
-        userData.put(cookieList.get(i), cookieList.get(i + 1));
+        mtUserInfo.put(cookieList.get(i), cookieList.get(i + 1));
+    }} catch (Exception e){
+        fail("Данные собраны неверно");
     }
 
-
-try{
     userDetails = new UserDetails(
-            this.getCookie(userData,"firstName"),
-            this.getCookie(userData,"lastName"),
-            this.getCookie(userData,"address1"),
-            this.getCookie(userData,"address2"),
-            this.getCookie(userData,"creditCard"),
-            this.getCookie(userData,"expDate"));
-   }catch(NullPointerException e){
-    Assert.fail("Данные введены неверно");
-   }
+            this.getCookie(mtUserInfo,"firstName"),
+            this.getCookie(mtUserInfo,"lastName"),
+            this.getCookie(mtUserInfo,"address1"),
+            this.getCookie(mtUserInfo,"address2"),
+            this.getCookie(mtUserInfo,"creditCard"),
+            this.getCookie(mtUserInfo,"expDate"));
+
         userDetails.setExpDate(URLDecoder.decode(userDetails.getExpDate(), StandardCharsets.UTF_8));
     System.out.println(userDetails);
 return userDetails;
@@ -114,7 +127,7 @@ return userDetails;
 
 
     @Step("Оформление заказа")
-        public void booking(BookingDetails bookingDetails, UserDetails userDetails, Passenger[] passengers, HiddenDetails hiddenDetails) {
+        public void booking(Map<String,String> cookies, BookingDetails bookingDetails, UserDetails userDetails, Passenger[] passengers, HiddenDetails hiddenDetails) {
 
     given()
             .cookies(cookies)
@@ -199,6 +212,11 @@ return userDetails;
                     .extract().response();
     Document thirdResPage = Jsoup.parse(thirdRes.asString());
 
+    }
+
+
+    @Step("Переход на страницу Itinerary,проверка общего количества заказов")
+    public List<String> checkItinerary(Map<String,String> cookies) {
         Response itinerary=
                 given()
                 .spec(Specifications.requestSpec())
@@ -206,9 +224,41 @@ return userDetails;
                 .when()
                 .get(EndPoints.itinerary)
                 .then()
-                //.log().body()
+                        .log().body()
         .extract().response();
+        Document resultPage = Jsoup.parse(itinerary.asString());
+        List<Element> flightIDs =resultPage.body().getElementsByAttributeValue("name","flightID");
+        List<String> flights= flightIDs.stream().map(x->x.attr("value")).collect(Collectors.toList());
+        flights.forEach(System.out::println);
+/**
+ *  Проверка: число созданных во время теста заказов равно общему количеству отображенных заказов на странице
+ */
+        //Assert.assertEquals(flightIDs.size(), DP.bookingData().length);
+        return flights;
+
 }
+
+    @Step("Отмена всех заказов")
+    public void cancelAll(Map<String,String> cookies, List<String> flightIDs) {
+        Response cancel=
+                given()
+                        .spec(Specifications.requestSpec())
+                        .cookies(cookies)
+                        .when()
+                        .param(".cgifields",flightIDs)
+                        .post(EndPoints.itinerary)
+                        .then()
+                        //.log().body()
+                        .extract().response();
+        Document resultPage = Jsoup.parse(cancel.asString());
+        /**
+         *  Проверка: после отмены всех заказов появляется сообщение об отсутствии заказов
+         */
+        Assert.assertTrue(resultPage.getElementsByTag("h3")
+                .stream()
+                .anyMatch(x->x.text().equals("No flights have been reserved.")));
+
+    }
 
 }
 
